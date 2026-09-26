@@ -1,0 +1,57 @@
+name: Build web app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack source
+        run: unzip -q -o source.zip -d src
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Prepare
+        working-directory: src/apps/mobile
+        run: |
+          flutter --version
+          flutter create . --org com.familylearn --platforms web --project-name family_learn
+          flutter pub get
+      - name: Analyze
+        working-directory: src/apps/mobile
+        continue-on-error: true
+        run: flutter analyze --no-fatal-infos
+      - name: Test
+        working-directory: src/apps/mobile
+        continue-on-error: true
+        run: flutter test
+      - name: Build
+        working-directory: src/apps/mobile
+        run: flutter build web --release --dart-define-from-file=env.json --base-href "/${{ github.event.repository.name }}/"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: src/apps/mobile/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
