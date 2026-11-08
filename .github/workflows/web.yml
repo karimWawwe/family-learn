@@ -21,6 +21,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Unpack source
         run: unzip -q -o source.zip -d src
+      - name: Add lesson videos
+        run: |
+          mkdir -p src/apps/mobile/web/videos
+          cat media/11.mp4.part0 media/11.mp4.part1 media/11.mp4.part2 > src/apps/mobile/web/videos/11.mp4
+          cp media/22.mp4 media/33.mp4 media/11.jpg media/22.jpg media/33.jpg src/apps/mobile/web/videos/
+          ls -la src/apps/mobile/web/videos
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
